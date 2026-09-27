@@ -128,19 +128,6 @@ def salvar_qrcode_png(data_uri: str, caminho: str = "qrcode_pix.png") -> str:
     return caminho
 
 
-def consultar_saldo(efi: EfiPay) -> str:
-    """
-    Consulta o saldo Pix da conta Efí (GET /v2/gn/saldo).
-    Retorna o saldo como string, ex: "1234.56".
-    """
-    resp = efi.get_account_balance()
-    # resposta típica: {"saldo": "1234.56"}  (ou {"saldo": {"valor": "..."}})
-    saldo = resp.get("saldo", resp)
-    if isinstance(saldo, dict):
-        saldo = saldo.get("valor", "0.00")
-    return saldo
-
-
 def consultar_status(efi: EfiPay, txid: str) -> str:
     """Consulta o status atual da cobrança."""
     detalhe = efi.pix_detail_charge(params={"txid": txid})
@@ -190,38 +177,15 @@ def checkout(valor: str, nome: str = "", cpf: str = "",
     return aguardar_pagamento(efi, dados["txid"])
 
 
-def mostrar_saldo() -> None:
-    """Consulta e imprime o saldo da conta."""
-    efi = criar_cliente()
-    saldo = consultar_saldo(efi)
-    ambiente = "SANDBOX" if EFI_SANDBOX else "PRODUÇÃO"
-    print(f"Saldo Pix ({ambiente}): R$ {saldo}")
-
-
 if __name__ == "__main__":
     import argparse
 
-    p = argparse.ArgumentParser(
-        description="Efí: consulta de saldo e checkout Pix com polling."
-    )
-    sub = p.add_subparsers(dest="acao", required=True)
-
-    # ação: saldo
-    sub.add_parser("saldo", help="Consulta o saldo da conta Efí")
-
-    # ação: cobrar
-    c = sub.add_parser("cobrar", help="Cria um checkout Pix e aguarda o pagamento")
-    c.add_argument("valor", help='Valor do pagamento, ex: "10.00"')
-    c.add_argument("--nome", default="", help="Nome do pagador (opcional)")
-    c.add_argument("--cpf", default="", help="CPF do pagador (opcional)")
-    c.add_argument("--desc", default="Pagamento", help="Descrição da cobrança")
-
+    p = argparse.ArgumentParser(description="Checkout Pix Efí com polling.")
+    p.add_argument("valor", help='Valor do pagamento, ex: "10.00"')
+    p.add_argument("--nome", default="", help="Nome do pagador (opcional)")
+    p.add_argument("--cpf", default="", help="CPF do pagador (opcional)")
+    p.add_argument("--desc", default="Pagamento", help="Descrição da cobrança")
     args = p.parse_args()
 
-    if args.acao == "saldo":
-        mostrar_saldo()
-        sys.exit(0)
-
-    # args.acao == "cobrar"
     pago = checkout(args.valor, args.nome, args.cpf, args.desc)
     sys.exit(0 if pago else 1)

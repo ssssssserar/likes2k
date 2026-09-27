@@ -1,0 +1,659 @@
+<title>Likes2K Observatory</title>
+<meta name="description" content="Central de comando ultra tecnológica para contas de Free Fire, com telescópio 3D dirigido pelo scroll, HUD esports e dados fictícios.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@600;700;800;900&display=swap">
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#04050c;
+    --bg-2:#070a15;
+    --surface:#0b0f1e;
+    --surface-2:#0f1530;
+    --line:#1b2444;
+    --line-2:#2a3768;
+    --text:#eaf0ff;
+    --muted:#8b95bd;
+    --dim:#586089;
+    --accent:#37e6ff;
+    --accent-2:#00b4ff;
+    --accent-soft:#37e6ff1f;
+    --violet:#b552ff;
+    --violet-soft:#b552ff1f;
+    --amber:#ffb020;
+    --good:#38edac;
+    --crit:#ff4d6d;
+    --shadow:0 24px 70px -28px #000;
+    --glow:0 0 24px var(--accent-soft);
+    --maxw:1160px;
+    --cut:14px; /* corte dos cantos HUD */
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(1300px 720px at 80% -10%, #14295a55, transparent 60%),
+      radial-gradient(1000px 640px at 2% 8%, #3a1266410, transparent 55%),
+      linear-gradient(180deg,var(--bg),var(--bg-2));
+    color:var(--text);
+    font-family:"Rajdhani",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  h1,h2,h3,.disp{font-family:"Chakra Petch","Rajdhani",sans-serif;text-wrap:balance;letter-spacing:.01em}
+  .mono{font-family:"Orbitron","Chakra Petch",sans-serif}
+  a{color:inherit}
+  .tnum{font-variant-numeric:tabular-nums}
+  .eyebrow{font-family:"Chakra Petch",sans-serif;text-transform:uppercase;letter-spacing:.3em;
+    font-size:.72rem;font-weight:600;color:var(--accent)}
+
+  /* scanline + grid ambience */
+  .fx{position:fixed;inset:0;z-index:1;pointer-events:none;mix-blend-mode:screen;opacity:.5;
+    background:repeating-linear-gradient(0deg,#ffffff05 0 1px,transparent 1px 3px)}
+  @media(prefers-reduced-motion:no-preference){
+    .fx{animation:scan 8s linear infinite}
+    @keyframes scan{to{background-position:0 300px}}
+  }
+
+  /* 3D layer */
+  #scene{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+  .veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(125% 85% at 50% 38%, transparent 38%, #04050ce6 92%)}
+
+  .wrap{position:relative;z-index:2}
+  .shell{max-width:var(--maxw);margin-inline:auto;padding-inline:20px}
+
+  /* HUD panel with cut corners + bracket accents */
+  .hud{position:relative;background:linear-gradient(180deg,#0a0e1ce8,#070a14f5);
+    border:1px solid var(--line);
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+    box-shadow:var(--shadow)}
+  .hud::before,.hud::after{content:"";position:absolute;width:16px;height:16px;pointer-events:none}
+  .hud::before{top:8px;right:8px;border-top:2px solid var(--accent);border-right:2px solid var(--accent);opacity:.7}
+  .hud::after{bottom:8px;left:8px;border-bottom:2px solid var(--accent);border-left:2px solid var(--accent);opacity:.7}
+
+  /* ticker */
+  .ticker{border-bottom:1px solid var(--line);background:#04060cbb;backdrop-filter:blur(6px);
+    font-family:"Chakra Petch";font-size:.78rem;letter-spacing:.08em;overflow:hidden;white-space:nowrap;position:relative;z-index:21}
+  .ticker .track{display:inline-block;padding:8px 0;animation:marq 26s linear infinite}
+  @media(prefers-reduced-motion:reduce){.ticker .track{animation:none}}
+  @keyframes marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .ticker b{color:var(--accent)} .ticker .s{color:var(--dim);margin:0 18px}
+  .ticker .up{color:var(--good)}
+
+  /* top bar */
+  header.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;backdrop-filter:blur(10px);
+    background:linear-gradient(180deg,#04050cd8,#04050c66);border-bottom:1px solid var(--line)}
+  .bar-in{display:flex;align-items:center;gap:16px;height:64px}
+  .logo{display:flex;align-items:center;gap:11px;font-family:"Orbitron";font-weight:800;letter-spacing:.06em;font-size:1.05rem}
+  .logo .mark{width:30px;height:30px;flex:none;display:grid;place-items:center;
+    background:linear-gradient(150deg,var(--violet),var(--accent));color:#04121a;font-weight:900;font-size:.9rem;
+    clip-path:polygon(20% 0,100% 0,80% 100%,0 100%);box-shadow:0 0 18px var(--accent-soft)}
+  .logo b{color:var(--accent)}
+  nav.links{margin-left:auto;display:flex;gap:24px}
+  nav.links a{font-size:.9rem;color:var(--muted);text-decoration:none;font-weight:600;font-family:"Chakra Petch";position:relative}
+  nav.links a:hover{color:var(--text)}
+  nav.links a::after{content:"";position:absolute;left:0;bottom:-6px;height:2px;width:0;background:var(--accent);transition:.2s}
+  nav.links a:hover::after{width:100%}
+  .status-chip{display:flex;align-items:center;gap:7px;font-family:"Chakra Petch";font-size:.7rem;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--good);border:1px solid #1e5a45;
+    background:#0a2018aa;padding:6px 11px;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+  @media(max-width:780px){nav.links{display:none}}
+
+  /* buttons */
+  .btn{font-family:"Chakra Petch";font-weight:700;letter-spacing:.04em;cursor:pointer;font-size:.98rem;
+    text-decoration:none;display:inline-flex;gap:9px;align-items:center;padding:14px 26px;border:1px solid transparent;
+    transition:.18s;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+  .btn.primary{background:linear-gradient(120deg,var(--accent),var(--accent-2));color:#04121a;box-shadow:0 12px 34px -12px var(--accent)}
+  .btn.primary:hover{transform:translateY(-2px);box-shadow:0 18px 44px -14px var(--accent)}
+  .btn.ghost{border-color:var(--line-2);color:var(--text);background:#0a0f1faa}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* hero */
+  .hero{min-height:90vh;display:flex;flex-direction:column;justify-content:center;padding-block:70px 40px}
+  .badge-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px}
+  .hbadge{font-family:"Chakra Petch";font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+    border:1px solid var(--line-2);padding:6px 12px;display:flex;align-items:center;gap:8px;
+    clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+  .hbadge .d{width:6px;height:6px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent)}
+  .hero h1{font-family:"Orbitron";font-weight:900;font-size:clamp(2.7rem,8.5vw,6rem);line-height:.95;margin:0 0 20px;letter-spacing:-.01em}
+  .hero h1 .g{background:linear-gradient(100deg,var(--accent),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.lead{max-width:54ch;color:var(--muted);font-size:1.18rem;margin:0 0 32px}
+  .cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+  .mini-stats{display:flex;flex-wrap:wrap;gap:26px;margin-top:40px}
+  .mini-stats .m .n{font-family:"Orbitron";font-weight:800;font-size:1.5rem;color:var(--text)}
+  .mini-stats .m .l{font-family:"Chakra Petch";font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .scroll-hint{margin-top:52px;display:flex;align-items:center;gap:12px;color:var(--dim);
+    font-family:"Chakra Petch";font-size:.76rem;letter-spacing:.22em;text-transform:uppercase}
+  .mouse{width:24px;height:38px;border:2px solid var(--dim);border-radius:14px;position:relative;flex:none}
+  .mouse::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:7px;border-radius:2px;background:var(--accent);transform:translateX(-50%);animation:wheel 1.5s infinite}
+  @keyframes wheel{0%{opacity:0;transform:translate(-50%,0)}40%{opacity:1}100%{opacity:0;transform:translate(-50%,12px)}}
+  @media(prefers-reduced-motion:reduce){.mouse::after{animation:none}}
+
+  /* impact band */
+  .impact{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-block:20px}
+  .impact .cell{padding:26px 22px;border-right:1px solid var(--line);text-align:center}
+  .impact .cell:last-child{border-right:none}
+  .impact .n{font-family:"Orbitron";font-weight:800;font-size:clamp(1.6rem,4vw,2.4rem);
+    background:linear-gradient(180deg,var(--text),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .impact .l{font-family:"Chakra Petch";font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-top:4px}
+  @media(max-width:720px){.impact{grid-template-columns:1fr 1fr}.impact .cell:nth-child(2){border-right:none}
+    .impact .cell:nth-child(1),.impact .cell:nth-child(2){border-bottom:1px solid var(--line)}}
+
+  /* sections */
+  section.block{padding-block:66px;position:relative}
+  .sec-head{margin-bottom:30px}
+  .sec-head h2{font-family:"Orbitron";font-weight:800;font-size:clamp(1.7rem,4.6vw,2.7rem);margin:.5rem 0 .35rem}
+  .sec-head p{color:var(--muted);margin:0;max-width:62ch}
+
+  .grid{display:grid;gap:16px}
+  .g-3{grid-template-columns:repeat(3,1fr)}
+  .g-4{grid-template-columns:repeat(4,1fr)}
+  .g-2{grid-template-columns:1.35fr .9fr}
+  @media(max-width:880px){.g-3,.g-4{grid-template-columns:repeat(2,1fr)}.g-2{grid-template-columns:1fr}}
+  @media(max-width:460px){.g-4{grid-template-columns:1fr 1fr}}
+
+  .card{position:relative;background:var(--surface);border:1px solid var(--line);padding:18px;transition:.18s;
+    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+  .card:hover{border-color:var(--line-2);transform:translateY(-3px);box-shadow:0 18px 40px -22px var(--accent)}
+  .card .k{color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.13em;font-family:"Chakra Petch"}
+  .card .v{font-family:"Orbitron";font-weight:800;font-size:1.9rem;margin-top:6px}
+  .card .sub{font-size:.86rem;color:var(--dim)}
+  .up{color:var(--good)} .down{color:var(--crit)}
+
+  .live-dot{width:9px;height:9px;border-radius:50%;background:var(--good);display:inline-block;box-shadow:0 0 0 0 var(--good);animation:pulse 1.8s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 #38edac80}70%{box-shadow:0 0 0 8px #38edac00}100%{box-shadow:0 0 0 0 #38edac00}}
+
+  .feed{margin:0;padding:0;display:flex;flex-direction:column}
+  .feed li{display:flex;gap:12px;align-items:center;padding:11px 4px;border-top:1px solid var(--line);list-style:none;font-size:.95rem}
+  .feed li:first-child{border-top:none}
+  .feed .ico{width:34px;height:34px;flex:none;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);
+    font-weight:700;font-family:"Chakra Petch";clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+  .feed .who{font-weight:600} .feed .when{margin-left:auto;color:var(--dim);font-size:.8rem;white-space:nowrap}
+  .roster{display:flex;flex-direction:column;gap:11px}
+  .rrow{display:flex;align-items:center;gap:12px}
+  .rrow .rank{font-family:"Orbitron";color:var(--accent);width:30px;text-align:right;font-weight:700;font-size:.85rem}
+  .rrow .bar{flex:1;height:8px;background:#0b1122;overflow:hidden;clip-path:polygon(3px 0,100% 0,100% 100%,0 100%)}
+  .rrow .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--violet))}
+  .rrow .amt{font-family:"Orbitron";color:var(--muted);width:64px;text-align:right;font-size:.85rem}
+
+  .chart-wrap{padding:22px}
+  svg .axis{stroke:var(--line);stroke-width:1}
+  svg .glab{fill:var(--dim);font-size:11px;font-family:"Chakra Petch"}
+  svg .area{fill:url(#ag)} svg .line{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+  svg .pt{fill:#04121a;stroke:var(--accent);stroke-width:2.5}
+
+  .skins{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media(max-width:880px){.skins{grid-template-columns:repeat(2,1fr)}}
+  .skin{position:relative;overflow:hidden;border:1px solid var(--line);min-height:200px;display:flex;flex-direction:column;justify-content:flex-end;transition:.2s;
+    clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+  .skin:hover{transform:translateY(-4px);border-color:var(--accent)}
+  .skin .art{position:absolute;inset:0}
+  .skin .meta{position:relative;padding:13px;background:linear-gradient(180deg,transparent,#04050cf2)}
+  .skin .nm{font-family:"Chakra Petch";font-weight:600}
+  .skin .rar{font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;font-family:"Chakra Petch"}
+  .rar.lend{color:var(--amber)} .rar.epic{color:#c98bff} .rar.raro{color:#5cc0ff}
+  .tag-eq{position:absolute;top:10px;right:10px;font-size:.64rem;font-family:"Chakra Petch";letter-spacing:.1em;text-transform:uppercase;
+    background:#04121acc;border:1px solid var(--accent);color:var(--accent);padding:3px 9px;
+    clip-path:polygon(5px 0,100% 0,100% 100%,0 100%,0 5px)}
+
+  .banner{position:relative;overflow:hidden;border:1px solid var(--line);min-height:240px;display:flex;align-items:flex-end;
+    clip-path:polygon(16px 0,100% 0,100% calc(100% - 16px),calc(100% - 16px) 100%,0 100%,0 16px)}
+  .banner .bg{position:absolute;inset:0}
+  .banner .info{position:relative;padding:24px;display:flex;gap:18px;align-items:center;width:100%;background:linear-gradient(180deg,transparent,#04050cf5)}
+  .avatar{width:82px;height:82px;flex:none;border:2px solid var(--accent);background:linear-gradient(150deg,var(--violet),var(--accent));
+    display:grid;place-items:center;font-family:"Orbitron";font-weight:800;font-size:1.7rem;color:#04121a;box-shadow:0 0 26px var(--accent-soft);
+    clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px)}
+  .idblock .nick{font-family:"Orbitron";font-weight:800;font-size:1.5rem;display:flex;align-items:center;gap:10px}
+  .verified{color:var(--accent);font-size:1rem}
+  .idblock .meta2{color:var(--muted);font-size:.92rem}
+  .statline{margin-left:auto;display:flex;gap:28px;text-align:right}
+  .statline .n{font-family:"Orbitron";font-weight:800;font-size:1.35rem;display:block}
+  .statline .l{color:var(--dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;display:block}
+  @media(max-width:660px){.statline{width:100%;margin:0;justify-content:space-between;text-align:left}}
+
+  .store{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:880px){.store{grid-template-columns:1fr}}
+  .plan{position:relative;border:1px solid var(--line);padding:24px;background:var(--surface);display:flex;flex-direction:column;gap:12px;transition:.2s;
+    clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px)}
+  .plan:hover{transform:translateY(-4px)}
+  .plan.feat{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent-soft),0 24px 56px -26px var(--accent)}
+  .plan .amt{font-family:"Orbitron";font-weight:800;font-size:2.2rem}
+  .plan .amt small{font-size:.9rem;color:var(--muted);font-weight:500}
+  .plan .price{color:var(--accent);font-family:"Orbitron";font-weight:800;font-size:1.4rem}
+  .plan ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;color:var(--muted);font-size:.94rem}
+  .plan li::before{content:"◆ ";color:var(--accent);font-size:.7em}
+  .best{position:absolute;top:-1px;right:-1px;background:var(--accent);color:#04121a;font-family:"Chakra Petch";font-size:.68rem;
+    letter-spacing:.12em;text-transform:uppercase;padding:5px 12px;clip-path:polygon(10px 0,100% 0,100% 100%,0 100%)}
+
+  footer{border-top:1px solid var(--line);padding-block:36px;color:var(--dim);font-size:.86rem;margin-top:42px}
+  footer .shell{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+  /* ===== ACCESS GATE ===== */
+  body.locked{overflow:hidden}
+  .gate{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;
+    background:radial-gradient(1000px 700px at 50% 18%, #0a1330f0, #04050cfb);backdrop-filter:blur(12px)}
+  .gate.on{display:flex}
+  .gate .panel{width:min(560px,100%);background:linear-gradient(180deg,#0a0e1cf5,#070a14fb);border:1px solid var(--line-2);
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));
+    box-shadow:var(--shadow);padding:34px 30px;position:relative}
+  .gate .panel::before,.gate .panel::after{content:"";position:absolute;width:18px;height:18px;pointer-events:none}
+  .gate .panel::before{top:9px;right:9px;border-top:2px solid var(--accent);border-right:2px solid var(--accent);opacity:.7}
+  .gate .panel::after{bottom:9px;left:9px;border-bottom:2px solid var(--violet);border-left:2px solid var(--violet);opacity:.7}
+  .gate .lock{width:52px;height:52px;display:grid;place-items:center;margin-bottom:16px;color:var(--accent);font-size:1.4rem;
+    border:1px solid var(--line-2);background:var(--accent-soft);
+    clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
+  .gate h2{font-family:"Orbitron";font-weight:800;font-size:1.5rem;margin:0 0 8px}
+  .gate p.sub{color:var(--muted);margin:0 0 22px;font-size:.96rem;max-width:46ch}
+  .gate label{display:block;font-family:"Chakra Petch";font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+  .gate .field{display:flex;gap:10px;flex-wrap:wrap}
+  .gate input{flex:1;min-width:0;background:#04060f;border:1px solid var(--line-2);color:var(--text);
+    font-family:"Chakra Petch";font-size:.98rem;padding:13px 15px;
+    clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+  .gate input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .gate .field .btn{padding:13px 22px}
+  .gate .msg{min-height:20px;margin-top:12px;font-family:"Chakra Petch";font-size:.88rem;color:var(--crit)}
+  .gate .msg.ok{color:var(--good)}
+  .gate .hint{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:.86rem}
+  .gate .hint button.link{color:var(--accent);background:none;border:none;padding:0;cursor:pointer;font:inherit;text-decoration:underline}
+  .gate .hint button.link:hover{color:var(--text)}
+</style>
+
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="veil" aria-hidden="true"></div>
+<div class="fx" aria-hidden="true"></div>
+
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle" aria-hidden="true">
+  <div class="panel">
+    <div class="lock" aria-hidden="true">🔒</div>
+    <h2 id="gateTitle">Acesso restrito</h2>
+    <p class="sub">Seu painel é privado. Cole o <b>link de acesso</b> (seu token) que você recebeu para abrir o Observatory.</p>
+    <form id="gateForm" autocomplete="off" novalidate>
+      <label for="gateInput">Link de acesso / token</label>
+      <div class="field">
+        <input id="gateInput" type="text" inputmode="url" spellcheck="false"
+               placeholder="https://…/?acesso=SEU-TOKEN" aria-describedby="gateMsg">
+        <button class="btn primary" type="submit">Entrar ▸</button>
+      </div>
+      <div class="msg" id="gateMsg" role="status" aria-live="polite"></div>
+    </form>
+    <div class="hint">Não tem um link? <button type="button" class="link" id="gateDemo">Usar link de demonstração</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // Tokens de acesso válidos (demo). Num serviço real, isto viria do backend.
+  var VALID = { "LK2K-OBSERVATORY-2K25": true, "LK2K-DEMO": true };
+  var DEMO  = "LK2K-DEMO";
+  var PARAM = "acesso";
+  var KEY   = "likes2k.acesso";
+
+  var gate = document.getElementById("gate"),
+      form = document.getElementById("gateForm"),
+      input = document.getElementById("gateInput"),
+      msg = document.getElementById("gateMsg"),
+      demoBtn = document.getElementById("gateDemo");
+
+  // Extrai o token de um texto: aceita a URL inteira (…?acesso=TOKEN ou #acesso=TOKEN)
+  // ou o token cru colado direto.
+  function tokenFrom(str){
+    if(!str) return "";
+    str = String(str).trim();
+    if(!str) return "";
+    var m = str.match(/[?#&]acesso=([^&#\s]+)/i);
+    var raw = m ? m[1] : str;
+    try{ raw = decodeURIComponent(raw); }catch(e){}
+    return raw.trim();
+  }
+  function isValid(tok){ return !!tok && Object.prototype.hasOwnProperty.call(VALID, tok); }
+
+  function lock(){
+    document.body.classList.add("locked");
+    gate.classList.add("on");
+    gate.setAttribute("aria-hidden","false");
+    setTimeout(function(){ if(input) input.focus(); }, 60);
+  }
+  function unlock(){
+    document.body.classList.remove("locked");
+    gate.classList.remove("on");
+    gate.setAttribute("aria-hidden","true");
+  }
+  function grant(tok){
+    try{ localStorage.setItem(KEY, tok); }catch(e){}
+    unlock();
+  }
+
+  // 1) token na URL (query ?acesso= ou hash #acesso=)
+  var fromUrl = "";
+  try{ fromUrl = new URLSearchParams(location.search).get(PARAM) || ""; }catch(e){}
+  if(!fromUrl && location.hash) fromUrl = tokenFrom(location.hash);
+  fromUrl = tokenFrom(fromUrl);
+
+  // 2) token salvo de uma visita anterior
+  var saved = "";
+  try{ saved = localStorage.getItem(KEY) || ""; }catch(e){}
+
+  if(isValid(fromUrl)){
+    grant(fromUrl);
+    // tira o token da barra de endereço
+    try{ history.replaceState(null, "", location.pathname); }catch(e){}
+  } else if(isValid(saved)){
+    unlock();
+  } else {
+    lock();
+  }
+
+  if(form) form.addEventListener("submit", function(e){
+    e.preventDefault();
+    var tok = tokenFrom(input.value);
+    if(isValid(tok)){
+      msg.textContent = "Acesso liberado. Abrindo painel…";
+      msg.classList.add("ok");
+      grant(tok);
+    } else {
+      msg.textContent = tok ? "Link ou token inválido. Confira e tente de novo." : "Cole o seu link de acesso.";
+      msg.classList.remove("ok");
+      if(input) input.focus();
+    }
+  });
+  if(demoBtn) demoBtn.addEventListener("click", function(){
+    input.value = location.origin + location.pathname + "?acesso=" + DEMO;
+    msg.textContent = "Link de demonstração preenchido — clique em Entrar.";
+    msg.classList.remove("ok");
+    input.focus();
+  });
+})();
+</script>
+
+<div class="wrap">
+  <div class="ticker" aria-hidden="true">
+    <span class="track" id="tk"></span>
+  </div>
+
+  <header class="bar">
+    <div class="shell bar-in">
+      <div class="logo"><span class="mark">2K</span>LIKES<b>2K</b></div>
+      <nav class="links">
+        <a href="#guilda">Guilda</a><a href="#likes">Likes</a><a href="#skins">Skins</a>
+        <a href="#conta">Conta</a><a href="#loja">Planos</a>
+      </nav>
+      <span class="status-chip"><span class="live-dot"></span> Sistemas online</span>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div class="badge-row">
+        <span class="hbadge"><span class="d"></span>Monitoramento de contas · Free Fire</span>
+        <span class="hbadge">Build V2K · Temporada Sirius</span>
+        <span class="hbadge">Prévia · dados de exemplo</span>
+      </div>
+      <h1>ACOMPANHE<br>SUA <span class="g">CONTA</span><br>EM TEMPO REAL</h1>
+      <p class="lead">Guilda ao vivo, evolução dos likes, skins equipadas e banner do perfil —
+        toda a sua conta em um só painel de observação. Arraste para baixo e alinhe o telescópio ao céu.</p>
+      <div class="cta-row">
+        <a class="btn primary" href="#conta">Abrir painel ▸</a>
+        <a class="btn ghost" href="#loja">Ver planos</a>
+      </div>
+      <div class="mini-stats">
+        <div class="m"><div class="n tnum" id="ms1">—</div><div class="l">Guildas ativas</div></div>
+        <div class="m"><div class="n tnum" id="ms2">—</div><div class="l">Likes hoje</div></div>
+        <div class="m"><div class="n">99,9%</div><div class="l">Uptime</div></div>
+      </div>
+      <div class="scroll-hint"><span class="mouse"></span> arraste para baixo</div>
+    </section>
+
+    <div class="hud impact">
+      <div class="cell"><div class="n tnum">12.480</div><div class="l">Contas monitoradas</div></div>
+      <div class="cell"><div class="n tnum">2,1M</div><div class="l">Likes registrados</div></div>
+      <div class="cell"><div class="n tnum">860</div><div class="l">Guildas rastreadas</div></div>
+      <div class="cell"><div class="n tnum">4,9★</div><div class="l">Satisfação</div></div>
+    </div>
+
+    <!-- GUILDA -->
+    <section class="block" id="guilda">
+      <div class="sec-head">
+        <span class="eyebrow">Tempo real</span>
+        <h2>Acompanhamento de guilda</h2>
+        <p>Atividade transmitida ao vivo: entradas, likes recebidos e ranking de membros.
+          <span class="live-dot"></span> <span style="color:var(--good);font-weight:600">ao vivo (simulado)</span></p>
+      </div>
+      <div class="grid g-4" style="margin-bottom:16px">
+        <div class="card"><div class="k">Membros online</div><div class="v tnum" id="mOn">—</div><div class="sub">de 48 no total</div></div>
+        <div class="card"><div class="k">Likes hoje</div><div class="v tnum" id="mLikes">—</div><div class="sub up">▲ acima da média</div></div>
+        <div class="card"><div class="k">Ranking regional</div><div class="v tnum">#37</div><div class="sub up">▲ subiu 4 posições</div></div>
+        <div class="card"><div class="k">Poder da guilda</div><div class="v tnum">92.4k</div><div class="sub">temporada Sirius</div></div>
+      </div>
+      <div class="grid g-2">
+        <div class="hud" style="padding:20px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span class="live-dot"></span><b class="disp">Fluxo de atividade</b></div>
+          <ul class="feed" id="feed"></ul>
+        </div>
+        <div class="hud" style="padding:20px">
+          <b class="disp" style="display:block;margin-bottom:16px">Top membros · likes</b>
+          <div class="roster" id="roster"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIKES -->
+    <section class="block" id="likes">
+      <div class="sec-head">
+        <span class="eyebrow">Histórico</span>
+        <h2>Registro de aumento de likes</h2>
+        <p>Cada envio é registrado e datado. A curva abaixo mostra os últimos 7 dias da conta de exemplo.</p>
+      </div>
+      <div class="grid g-2">
+        <div class="hud chart-wrap">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+            <b class="disp">Likes acumulados · 7 dias</b>
+            <span class="tnum" style="color:var(--good);font-weight:800;font-family:'Orbitron'">+1.240</span>
+          </div>
+          <svg viewBox="0 0 620 260" width="100%" role="img" aria-label="Gráfico de likes nos últimos 7 dias">
+            <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#37e6ff" stop-opacity=".4"/><stop offset="1" stop-color="#37e6ff" stop-opacity="0"/>
+            </linearGradient></defs>
+            <g id="chart"></g>
+          </svg>
+        </div>
+        <div class="grid" style="grid-template-columns:1fr 1fr;align-content:start">
+          <div class="card"><div class="k">Total de likes</div><div class="v tnum">27.860</div><div class="sub">na conta de exemplo</div></div>
+          <div class="card"><div class="k">Média / dia</div><div class="v tnum">177</div><div class="sub up">▲ 12% na semana</div></div>
+          <div class="card"><div class="k">Melhor dia</div><div class="v tnum">312</div><div class="sub">sábado</div></div>
+          <div class="card"><div class="k">Sequência</div><div class="v tnum">19d</div><div class="sub">dias seguidos</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SKINS -->
+    <section class="block" id="skins">
+      <div class="sec-head">
+        <span class="eyebrow">Inventário</span>
+        <h2>Skins em uso na conta</h2>
+        <p>As skins atualmente equipadas no loadout de exemplo, com raridade e status.</p>
+      </div>
+      <div class="skins" id="skinGrid"></div>
+    </section>
+
+    <!-- CONTA -->
+    <section class="block" id="conta">
+      <div class="sec-head">
+        <span class="eyebrow">Perfil</span>
+        <h2>Banner e informações da conta</h2>
+        <p>Cartão de identidade do jogador com banner, avatar, nível e demais dados do perfil de exemplo.</p>
+      </div>
+      <div class="banner">
+        <div class="bg" id="bannerArt"></div>
+        <div class="info">
+          <div class="avatar">N</div>
+          <div class="idblock">
+            <div class="nick">NovaStrike<span class="verified">✔</span></div>
+            <div class="meta2 tnum">UID 517 340 982 · Nível 74 · Patente <b style="color:var(--amber)">Heroico</b></div>
+          </div>
+          <div class="statline">
+            <div><span class="n tnum">74</span><span class="l">Nível</span></div>
+            <div><span class="n tnum">2.1k</span><span class="l">Diamantes</span></div>
+            <div><span class="n tnum">61%</span><span class="l">Vitórias</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="grid g-4" style="margin-top:16px">
+        <div class="card"><div class="k">Temporada</div><div class="v" style="font-size:1.35rem">Sirius</div><div class="sub">rank atual</div></div>
+        <div class="card"><div class="k">K/D</div><div class="v tnum">3.42</div><div class="sub up">▲ em alta</div></div>
+        <div class="card"><div class="k">Partidas</div><div class="v tnum">4.918</div><div class="sub">no total</div></div>
+        <div class="card"><div class="k">Headshot</div><div class="v tnum">48%</div><div class="sub">precisão</div></div>
+      </div>
+    </section>
+
+    <!-- PLANOS -->
+    <section class="block" id="loja">
+      <div class="sec-head">
+        <span class="eyebrow">Planos</span>
+        <h2>Planos de acompanhamento</h2>
+        <p>Escolha o nível de monitoramento da sua conta. Prévia de interface com valores de exemplo.</p>
+      </div>
+      <div class="store">
+        <div class="plan">
+          <div class="eyebrow">Órbita</div><div class="amt">Básico</div>
+          <div class="price tnum">R$ 9,90<small style="font-size:.5em;color:var(--muted);font-weight:500"> /mês</small></div>
+          <ul><li>Estatísticas da conta</li><li>Histórico de likes</li><li>Atualização a cada 6h</li></ul>
+          <button class="btn ghost" type="button" data-demo>Selecionar</button>
+        </div>
+        <div class="plan feat">
+          <span class="best">Mais popular</span>
+          <div class="eyebrow">Nebulosa</div><div class="amt">Pro</div>
+          <div class="price tnum">R$ 19,90<small style="font-size:.5em;color:var(--muted);font-weight:500"> /mês</small></div>
+          <ul><li>Tudo do Básico</li><li>Guilda em tempo real</li><li>Alertas de mudança</li><li>Relatório semanal</li></ul>
+          <button class="btn primary" type="button" data-demo>Selecionar</button>
+        </div>
+        <div class="plan">
+          <div class="eyebrow">Supernova</div><div class="amt">Elite</div>
+          <div class="price tnum">R$ 39,90<small style="font-size:.5em;color:var(--muted);font-weight:500"> /mês</small></div>
+          <ul><li>Tudo do Pro</li><li>Tempo real total</li><li>Múltiplas contas</li><li>Suporte dedicado</li></ul>
+          <button class="btn ghost" type="button" data-demo>Selecionar</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="shell">
+    <div class="logo"><span class="mark">2K</span>LIKES<b>2K</b></div>
+    <span>Projeto conceito · dados fictícios · sem afiliação com Garena/Free Fire</span>
+  </div></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ticker */
+  var tkItems=["<b>NovaStrike</b> +25 likes","<b>Lyra</b> entrou na guilda","<b>ZeroCooldown</b> subiu para Mestre",
+    "<span class='up'>▲</span> Guilda #37 no ranking regional","<b>Vortex</b> +12 likes","<b>PhantomFF</b> +40 likes",
+    "Temporada <b>Sirius</b> em andamento","<span class='up'>▲</span> 2,1M likes registrados"];
+  var line=tkItems.join("<span class='s'>◆</span>");
+  document.getElementById("tk").innerHTML=line+"<span class='s'>◆</span>"+line;
+
+  /* demo data */
+  var members=[["NovaStrike",980],["ZeroCooldown",860],["Vortex",780],["ClutchKing",690],["PhantomFF",560],["Lyra",430]];
+  var actions=[["+","NovaStrike recebeu 25 likes"],["»","Lyra entrou na guilda"],["★","ZeroCooldown subiu para Mestre"],
+    ["+","Vortex recebeu 12 likes"],["⚔","ClutchKing venceu ranqueada"],["+","PhantomFF recebeu 40 likes"],
+    ["»","Kairo saiu da guilda"],["★","Lyra alcançou 1.000 likes"]];
+  var skins=[["Anjo Cibernético","Lendária","lend",true,["#3a1e6e","#b552ff"]],["Dragão de Plasma","Épica","epic",false,["#0e3b52","#37e6ff"]],
+    ["Lobo Espectral","Épica","epic",true,["#122a1f","#38edac"]],["Fênix Solar","Lendária","lend",false,["#5a2a06","#ffb020"]],
+    ["Ronin Neon","Rara","raro",false,["#101a3a","#5cc0ff"]],["Caveira Glacial","Rara","raro",true,["#0d2233","#7fd4ff"]],
+    ["Samurai Vulcão","Épica","epic",false,["#3a0f16","#ff4d6d"]],["Vanguarda 2K","Lendária","lend",true,["#2a184a","#b552ff"]]];
+
+  var feed=document.getElementById("feed");
+  function ago(){return Math.floor(Math.random()*50)+2+"s";}
+  function renderFeed(){feed.innerHTML="";for(var i=0;i<6;i++){var a=actions[(i+(Date.now()/4000|0))%actions.length];
+    var li=document.createElement("li");li.innerHTML='<span class="ico">'+a[0]+'</span><span class="who">'+a[1]+'</span><span class="when tnum">há '+ago()+'</span>';feed.appendChild(li);}}
+  var roster=document.getElementById("roster"),maxL=members[0][1];
+  members.forEach(function(m,i){var d=document.createElement("div");d.className="rrow";
+    d.innerHTML='<span class="rank">#'+(i+1)+'</span><span class="who" style="width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+m[0]+'</span><span class="bar"><i style="width:'+(m[1]/maxL*100)+'%"></i></span><span class="amt tnum">'+m[1]+'</span>';roster.appendChild(d);});
+
+  var mOn=document.getElementById("mOn"),mLikes=document.getElementById("mLikes"),ms1=document.getElementById("ms1"),ms2=document.getElementById("ms2");
+  var likesToday=1240;
+  function tick(){var on=20+Math.floor(Math.random()*9);mOn.textContent=on;likesToday+=Math.floor(Math.random()*6);
+    var s=likesToday.toLocaleString("pt-BR");mLikes.textContent=s;ms2.textContent=s;ms1.textContent=(850+Math.floor(Math.random()*20));renderFeed();}
+  tick();if(!reduce)setInterval(tick,3200);
+
+  /* chart */
+  (function(){var data=[80,140,120,210,180,312,240],days=["S","T","Q","Q","S","S","D"];
+   var W=620,H=260,pad={l:38,r:14,t:16,b:28},max=340,min=0,iw=W-pad.l-pad.r,ih=H-pad.t-pad.b,g=document.getElementById("chart");
+   var xs=function(i){return pad.l+i*(iw/(data.length-1));},ys=function(v){return pad.t+ih-(v-min)/(max-min)*ih;};
+   var svg="";[0,85,170,255,340].forEach(function(v){var y=ys(v);svg+='<line class="axis" x1="'+pad.l+'" y1="'+y+'" x2="'+(W-pad.r)+'" y2="'+y+'" opacity=".5"/><text class="glab" x="'+(pad.l-8)+'" y="'+(y+4)+'" text-anchor="end">'+v+'</text>';});
+   var lp="";data.forEach(function(v,i){lp+=(i?"L":"M")+xs(i).toFixed(1)+" "+ys(v).toFixed(1)+" ";});
+   svg+='<path class="area" d="M'+xs(0)+' '+ys(0)+' '+lp.replace(/^M/,"L")+"L"+xs(data.length-1)+" "+ys(0)+' Z"/><path class="line" d="'+lp+'"/>';
+   data.forEach(function(v,i){svg+='<circle class="pt" cx="'+xs(i)+'" cy="'+ys(v)+'" r="4"/><text class="glab" x="'+xs(i)+'" y="'+(H-8)+'" text-anchor="middle">'+days[i]+'</text>';});
+   g.innerHTML=svg;})();
+
+  /* skins */
+  var sg=document.getElementById("skinGrid");
+  skins.forEach(function(s){var el=document.createElement("div");el.className="skin";
+    el.innerHTML='<div class="art" style="background:radial-gradient(120% 90% at 70% 20%,'+s[4][1]+'55,transparent 60%),linear-gradient(150deg,'+s[4][0]+','+s[4][1]+'33)"></div>'+(s[3]?'<span class="tag-eq">Equipada</span>':'')+'<div class="meta"><div class="rar '+s[2]+'">'+s[1]+'</div><div class="nm">'+s[0]+'</div></div>';sg.appendChild(el);});
+
+  document.getElementById("bannerArt").style.background="radial-gradient(90% 140% at 15% 10%, #37e6ff44, transparent 55%),radial-gradient(90% 140% at 90% 20%, #b552ff55, transparent 55%),linear-gradient(120deg,#0a1330,#160b2e)";
+
+  document.querySelectorAll("[data-demo]").forEach(function(b){b.addEventListener("click",function(){var t=b.textContent;b.textContent="Demonstração — sem pagamento";setTimeout(function(){b.textContent=t;},1600);});});
+
+  /* ================= THREE.JS TELESCOPE ================= */
+  var canvas=document.getElementById("scene");if(!window.THREE)return;
+  var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  var scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x04050c,0.028);
+  var camera=new THREE.PerspectiveCamera(48,1,0.1,100);camera.position.set(0,1.2,9);
+  scene.add(new THREE.AmbientLight(0x404a70,0.95));
+  var cyan=new THREE.PointLight(0x37e6ff,1.7,60);cyan.position.set(-6,5,6);scene.add(cyan);
+  var violet=new THREE.PointLight(0xb552ff,1.5,60);violet.position.set(7,-2,4);scene.add(violet);
+  var key=new THREE.DirectionalLight(0xffffff,0.55);key.position.set(3,8,5);scene.add(key);
+
+  var starGeo=new THREE.BufferGeometry(),N=1700,pos=new Float32Array(N*3);
+  for(var i=0;i<N;i++){pos[i*3]=(Math.random()-0.5)*90;pos[i*3+1]=(Math.random()-0.5)*66;pos[i*3+2]=(Math.random()-0.5)*66-10;}
+  starGeo.setAttribute("position",new THREE.BufferAttribute(pos,3));
+  var stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xa8bcff,size:0.09,transparent:true,opacity:0.9}));scene.add(stars);
+
+  var body=new THREE.MeshStandardMaterial({color:0x141a30,metalness:0.88,roughness:0.32});
+  var trim=new THREE.MeshStandardMaterial({color:0x37e6ff,emissive:0x1cb6d8,emissiveIntensity:1.0,metalness:0.6,roughness:0.3});
+  var trimV=new THREE.MeshStandardMaterial({color:0xb552ff,emissive:0x6a1fb0,emissiveIntensity:0.9,metalness:0.6,roughness:0.3});
+  var glass=new THREE.MeshStandardMaterial({color:0x8ef2ff,emissive:0x37e6ff,emissiveIntensity:1.5,metalness:0.2,roughness:0.1,transparent:true,opacity:0.92});
+  var dark=new THREE.MeshStandardMaterial({color:0x0c1122,metalness:0.7,roughness:0.5});
+
+  var telescope=new THREE.Group(),tubePivot=new THREE.Group();telescope.add(tubePivot);
+  var tube=new THREE.Mesh(new THREE.CylinderGeometry(0.55,0.62,4.2,40),body);tube.rotation.z=Math.PI/2;tubePivot.add(tube);
+  [-1.4,-0.4,0.6,1.5].forEach(function(x){var r=new THREE.Mesh(new THREE.TorusGeometry(0.63,0.06,12,40),x>0?trim:trimV);r.position.x=x;r.rotation.y=Math.PI/2;tubePivot.add(r);});
+  var lensRim=new THREE.Mesh(new THREE.CylinderGeometry(0.66,0.66,0.18,40),trim);lensRim.rotation.z=Math.PI/2;lensRim.position.x=2.1;tubePivot.add(lensRim);
+  var lens=new THREE.Mesh(new THREE.CircleGeometry(0.58,40),glass);lens.position.x=2.2;lens.rotation.y=Math.PI/2;tubePivot.add(lens);
+  var eye=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.26,0.7,24),dark);eye.rotation.z=Math.PI/2;eye.position.x=-2.35;tubePivot.add(eye);
+  var eyeGlow=new THREE.Mesh(new THREE.CircleGeometry(0.16,24),glass);eyeGlow.position.x=-2.7;eyeGlow.rotation.y=-Math.PI/2;tubePivot.add(eyeGlow);
+  var finder=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,1.3,20),dark);finder.rotation.z=Math.PI/2;finder.position.set(0.4,0.6,0);tubePivot.add(finder);
+  tubePivot.position.y=1.15;
+  var hub=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.45,0.5,24),body);hub.position.y=0.4;telescope.add(hub);
+  var yoke=new THREE.Mesh(new THREE.BoxGeometry(0.3,1.1,0.3),body);yoke.position.y=0.95;telescope.add(yoke);
+  [0,1,2].forEach(function(k){var a=k*Math.PI*2/3;var leg=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.09,3.4,14),dark);
+    leg.position.set(Math.cos(a)*0.9,-1.3,Math.sin(a)*0.9);leg.rotation.z=Math.cos(a)*0.42;leg.rotation.x=-Math.sin(a)*0.42;telescope.add(leg);});
+  telescope.position.y=-0.4;scene.add(telescope);
+  var halo=new THREE.Mesh(new THREE.TorusGeometry(1.1,0.02,8,60),trim);halo.position.x=2.15;halo.rotation.y=Math.PI/2;tubePivot.add(halo);
+
+  var scrollP=0,targetP=0,mx=0,my=0,tmx=0,tmy=0;
+  function onScroll(){var max=document.documentElement.scrollHeight-window.innerHeight;targetP=max>0?Math.min(1,Math.max(0,window.scrollY/max)):0;}
+  window.addEventListener("scroll",onScroll,{passive:true});
+  window.addEventListener("mousemove",function(e){tmx=(e.clientX/window.innerWidth-0.5);tmy=(e.clientY/window.innerHeight-0.5);});
+  onScroll();
+  function resize(){var w=window.innerWidth,h=window.innerHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+  window.addEventListener("resize",resize);resize();
+  var t0=performance.now();
+  function frame(now){var dt=(now-t0)/1000;t0=now;
+    scrollP+=(targetP-scrollP)*0.08;mx+=(tmx-mx)*0.05;my+=(tmy-my)*0.05;
+    telescope.rotation.y=-0.5+scrollP*Math.PI*1.6+mx*0.4;
+    tubePivot.rotation.z=-0.15-scrollP*1.05;
+    telescope.position.x=2.4-scrollP*1.0;telescope.position.y=-0.4+Math.sin(now/1400)*0.05;
+    camera.position.z=9-scrollP*1.6;camera.position.y=1.2+my*0.6+scrollP*0.6;camera.lookAt(telescope.position.x,0.6,0);
+    halo.rotation.z+=dt*0.6;stars.rotation.y+=dt*0.01;lens.material.emissiveIntensity=1.2+Math.sin(now/500)*0.35;
+    renderer.render(scene,camera);requestAnimationFrame(frame);}
+  requestAnimationFrame(frame);
+})();
+</script>

@@ -233,11 +233,44 @@
   footer{border-top:1px solid var(--line);padding-block:36px;color:var(--dim);font-size:.86rem;margin-top:42px}
   footer .shell{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
   :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+  /* ===== boot / intro screen ===== */
+  #boot{position:fixed;inset:0;z-index:100;background:
+    radial-gradient(60% 45% at 50% 46%, #0b1330, #04050c 72%);
+    display:grid;place-items:center;transition:opacity .7s ease}
+  #boot.done{opacity:0;pointer-events:none}
+  #boot::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;opacity:.4;
+    background:repeating-linear-gradient(0deg,#ffffff08 0 1px,transparent 1px 3px)}
+  .boot-in{position:relative;display:flex;flex-direction:column;align-items:center;gap:20px;transform:translateY(-3%);text-align:center}
+  .boot-mark{width:98px;height:98px;display:grid;place-items:center;font-family:"Orbitron";font-weight:900;font-size:2rem;color:#04121a;
+    background:linear-gradient(150deg,var(--violet),var(--accent));
+    clip-path:polygon(20% 0,100% 0,80% 100%,0 100%);box-shadow:0 0 46px var(--accent-soft),0 0 120px #37e6ff22;
+    animation:bMark 1s cubic-bezier(.2,.85,.2,1) both}
+  @keyframes bMark{0%{opacity:0;transform:scale(.35) rotate(-10deg)}55%{opacity:1}100%{transform:scale(1) rotate(0)}}
+  .boot-word{font-family:"Orbitron";font-weight:800;letter-spacing:.28em;font-size:1.5rem;color:var(--text);opacity:0;animation:bUp .6s .45s both}
+  .boot-word b{color:var(--accent)}
+  .boot-sub{font-family:"Chakra Petch";letter-spacing:.34em;text-transform:uppercase;font-size:.68rem;color:var(--dim);opacity:0;animation:bUp .6s .75s both}
+  @keyframes bUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .boot-bar{width:220px;max-width:60vw;height:4px;background:#0e1428;overflow:hidden;margin-top:6px;
+    clip-path:polygon(2px 0,100% 0,100% 100%,0 100%);opacity:0;animation:bUp .5s .6s both}
+  .boot-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--violet));box-shadow:0 0 12px var(--accent)}
+  .boot-pct{font-family:"Orbitron";font-size:.72rem;color:var(--muted);letter-spacing:.12em;opacity:0;animation:bUp .5s .6s both}
+  @media(prefers-reduced-motion:reduce){.boot-mark,.boot-word,.boot-sub,.boot-bar,.boot-pct{animation:none;opacity:1}}
 </style>
 
 <canvas id="scene" aria-hidden="true"></canvas>
 <div class="veil" aria-hidden="true"></div>
 <div class="fx" aria-hidden="true"></div>
+
+<div id="boot" role="status" aria-label="Iniciando">
+  <div class="boot-in">
+    <div class="boot-mark">2K</div>
+    <div class="boot-word">LIKES<b>2K</b></div>
+    <div class="boot-sub">Observatory // Iniciando sistema</div>
+    <div class="boot-bar"><i></i></div>
+    <div class="boot-pct" id="bootPct">0%</div>
+  </div>
+</div>
 
 <div class="wrap">
   <div class="ticker" aria-hidden="true">
@@ -422,6 +455,23 @@
   </div></footer>
 </div>
 
+<script>
+/* boot / intro screen */
+(function(){
+  var boot=document.getElementById("boot");if(!boot)return;
+  var pct=document.getElementById("bootPct"),bar=boot.querySelector(".boot-bar i");
+  var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function finish(){boot.classList.add("done");setTimeout(function(){boot.hidden=true;},800);}
+  if(reduce){pct.textContent="100%";if(bar)bar.style.width="100%";setTimeout(finish,600);return;}
+  var start=performance.now(),DUR=2200,DELAY=400;
+  function step(now){
+    var t=Math.max(0,now-start-DELAY),p=Math.min(100,Math.round(t/DUR*100));
+    pct.textContent=p+"%";if(bar)bar.style.width=p+"%";
+    if(p<100)requestAnimationFrame(step);else setTimeout(finish,350);
+  }
+  requestAnimationFrame(step);
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function(){
